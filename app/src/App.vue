@@ -1,10 +1,10 @@
 <template>
   <div id="app">
     <form class="form" action="">
-      <label for="longitude">Longitude</label>
-      <input type="number" name="longitude" id="" v-model="longitude">
       <label for="latitude">Latitude</label>
       <input type="number" name="latitude" id="" v-model="latitude">
+      <label for="longitude">Longitude</label>
+      <input type="number" name="longitude" id="" v-model="longitude">
       <label for="housingMedianAge">Housing Median Age</label>
       <input type="number" name="housingMedianAge" id="" v-model="housingMedianAge">
       <label for="totalRooms">Total Rooms</label>
@@ -42,6 +42,58 @@ const OceanProximity = Object.freeze({
   NEAR_OCEAN: "nearOcean"
 });
 
+const Stats = Object.freeze({
+  longitude: {
+    mean: -119.57583393895324,
+    std: 2.0018602443854547
+  },
+  latitude: {
+    mean: 35.63957727713184,
+    std: 2.1380575446331753
+  },
+  housingMedianAge: {
+    mean: 28.6531007751938,
+    std: 12.574725974901003
+  },
+  totalRooms: {
+    mean: 2622.7283187984494,
+    std: 2138.4584192430398
+  },
+  totalBedrooms: {
+    mean: 534.9738901797725,
+    std: 412.69904106103536
+  },
+  population: {
+    mean: 1419.7908187984497,
+    std: 1115.6862406181137
+  },
+  households: {
+    mean: 497.06038032945736,
+    std: 375.7208452055105
+  },
+  medianIncome: {
+    mean: 3.8755893653100983,
+    std: 1.9049495984468043
+  },
+  roomsPerHousehold: {
+    mean: 5.4403405264058895,
+    std: 2.6117118136335082,
+  },
+  populationPerHousehold: {
+    mean: 3.0964373824861813,
+    std: 11.584825942269669
+  },
+  bedroomsPerRoom: {
+    mean: 0.21287796917099294,
+    std: 0.05737925003136537
+  }
+});
+
+// standardScore = (featureValue - meanAttributeValue) / stdDevAttributeValue
+// standardScore * stdDevAttributeValue = featureValue - meanAttributeValue
+// standardScore * stdDevAttributeValue + meanAttributeValue = featureValue
+const standardScore = (feature, stats) => (feature - stats.mean) / stats.std;
+
 const currency = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'USD',
@@ -55,19 +107,36 @@ export default {
     return {
       longitude: -118.39,
       latitude: 34.12,
-      housingMedianAge: 29,
-      totalRooms: 6447,
-      totalBedrooms: 1012,
-      population: 2184,
-      households: 960,
+      housingMedianAge: 29.0,
+      totalRooms: 6447.0,
+      totalBedrooms: 1012.0,
+      population: 2184.0,
+      households: 960.0,
       medianIncome: 8.2816,
       oceanProximity: OceanProximity.LESS_THAN_HOUR,
       medianHouseValue: 0
-      // features['x0_<1H OCEAN'] = 1;
-      // features['x0_INLAND'] = 0;
-      // features['x0_ISLAND'] = 0;
-      // features['x0_NEAR BAY'] = 0;
-      // features['x0_NEAR OCEAN'] = 0;
+
+      // longitude: -117.86,
+      // latitude: 33.77,
+      // housingMedianAge: 39.0,
+      // totalRooms: 4159.0,
+      // totalBedrooms: 655.0,
+      // population: 1669.0,
+      // households: 651.0,
+      // medianIncome: 4.6111,
+      // oceanProximity: OceanProximity.LESS_THAN_HOUR,
+      // medianHouseValue: 0
+
+      // longitude: -119.05,
+      // latitude: 34.21,
+      // housingMedianAge: 27.0,
+      // totalRooms: 4357.0,
+      // totalBedrooms: 926.0,
+      // population: 2110.0,
+      // households: 876.0,
+      // medianIncome: 3.0119,
+      // oceanProximity: OceanProximity.LESS_THAN_HOUR,
+      // medianHouseValue: 0
     };
   },
 
@@ -148,17 +217,17 @@ export default {
   methods: {
     predict() {
       const features = {};
-      features['longitude'] = this.longitude;
-      features['latitude'] = this.latitude;
-      features['housing_median_age'] = this.housingMedianAge;
-      features['total_rooms'] = this.totalRooms;
-      features['total_bedrooms'] = this.totalBedrooms;
-      features['population'] = this.population;
-      features['households'] = this.households;
-      features['median_income'] = this.medianIncome;
-      features['rooms_per_household'] = this.roomsPerHousehold;
-      features['population_per_household'] = this.populationPerHousehold;
-      features['bedrooms_per_room'] = this.bedroomsPerRoom;
+      features['longitude'] = standardScore(this.longitude, Stats.longitude);
+      features['latitude'] = standardScore(this.latitude, Stats.latitude);
+      features['housing_median_age'] = standardScore(this.housingMedianAge, Stats.housingMedianAge);
+      features['total_rooms'] = standardScore(this.totalRooms, Stats.totalRooms);
+      features['total_bedrooms'] = standardScore(this.totalBedrooms, Stats.totalBedrooms);
+      features['population'] = standardScore(this.population, Stats.population);
+      features['households'] = standardScore(this.households, Stats.households);
+      features['median_income'] = standardScore(this.medianIncome, Stats.medianIncome);
+      features['rooms_per_household'] = standardScore(this.roomsPerHousehold, Stats.roomsPerHousehold);
+      features['population_per_household'] = standardScore(this.populationPerHousehold, Stats.populationPerHousehold);
+      features['bedrooms_per_room'] = standardScore(this.bedroomsPerRoom, Stats.bedroomsPerRoom);
       features['x0_<1H OCEAN'] = this.oceanProximityVector[0];
       features['x0_INLAND'] = this.oceanProximityVector[1];
       features['x0_ISLAND'] = this.oceanProximityVector[2];
@@ -177,13 +246,6 @@ export default {
   },
 
   mounted() {
-    // axios.get("http://127.0.0.1:5000").then(response => {
-    //   console.log(response);
-    // });
-
-    // axios.get("http://127.0.0.1:5000/test").then(response => {
-    //   console.log(response);
-    // });
     this.predict();
   }
 
